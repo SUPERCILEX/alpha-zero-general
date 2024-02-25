@@ -4,10 +4,10 @@
 /temp/
 /.project
 /.pydevproject
+/venv
 
 # checkpoint
 checkpoints/
 
 # For PyCharm users
 .idea/
-
