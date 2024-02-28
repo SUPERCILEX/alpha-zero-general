@@ -168,7 +168,16 @@ class GeneralsGame(Game):
     def getScore(self, board, player):
         metadata, kings, armies, cities, mountains = np.split(board, 5, axis=2)
         mine = armies * player
-        return np.sum(mine) + np.sum(mine > 0) - np.sum(mine < 0)
+
+        my_best = np.argmax(mine)
+        my = my_best % self.width
+        mx = my_best // self.width
+
+        their_best = np.argmin(mine)
+        ty = their_best % self.width
+        tx = their_best // self.width
+
+        return np.sum(mine) + np.sum(mine > 0) * 2 - np.sum(mine < 0) * 3 - np.sqrt((my - ty) ** 2 + (mx - tx) ** 2) / 20 + (np.min(mine) / (np.max(mine) + 1))
 
     @staticmethod
     def display(board):
