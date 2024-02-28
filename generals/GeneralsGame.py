@@ -143,11 +143,13 @@ class GeneralsGame(Game):
         if metadata[0][0] > 5000:
             return 1e-6
 
-        if np.any(kings * armies < 0):
-            dead = np.argwhere(kings * armies < 0)[0]
+        mine = kings * armies
+        lost = mine < 0
+        if np.any(lost):
+            dead = np.argwhere(lost)[0]
             return np.sign(armies[dead[0], dead[1], 0])
 
-        if np.sum(kings * armies) == 0:
+        if np.sum(mine) == 0:
             return 1e-3
 
         return 0
