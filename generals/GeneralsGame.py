@@ -3,6 +3,7 @@ import sys
 sys.path.append('..')
 from Game import Game
 import numpy as np
+import time
 
 def generate_array_with_random_ones(N, M, x):
     # Create an array of zeros
@@ -68,13 +69,15 @@ class GeneralsGame(Game):
         return self.width * self.height * 4 * 2 + 1
 
     def getNextState(self, board, player, action):
-        metadata, kings, armies, cities, mountains = np.split(board.copy(), 5, axis=2)
+        metadata, kings, armies, cities, mountains = board[:, :, 0:1], board[:, :, 1:2], board[:, :, 2:3], board[:, :, 3:4], board[:, :, 4:]
+        metadata = metadata.copy()
+        armies = armies.copy()
 
         metadata[0][0] += 1
         if metadata[0][0] % 50 == 0:
-            armies[np.where(armies * player > 0)] += player
+            armies[armies * player > 0] += player
         else:
-            armies[np.where(armies * player * cities > 0)] += player
+            armies[armies * player * cities > 0] += player
 
         if action == self.getActionSize() - 1:
             return np.concatenate((metadata, kings, armies, cities, mountains), axis=2), -player
@@ -85,13 +88,14 @@ class GeneralsGame(Game):
 
         x = action % self.width
         y = action // self.width
-        soldiers = armies[x][y] * player
+        soldiers = armies[x, y, 0] * player
         if split:
-            soldiers = soldiers // 2
-            armies[x][y] = soldiers * player
+            soldiers //= 2
+            armies[x, y, 0] = soldiers * player
         else:
-            armies[x][y] = player
+            armies[x, y, 0] = player
             soldiers -= 1
+
         if direction == 0:
             x -= 1
         elif direction == 1:
@@ -100,58 +104,58 @@ class GeneralsGame(Game):
             y -= 1
         elif direction == 3:
             y += 1
-        armies[x][y] += soldiers * player
+
+        armies[x, y, 0] += soldiers * player
 
         return np.concatenate((metadata, kings, armies, cities, mountains), axis=2), -player
 
     def getValidMoves(self, board, player):
-        metadata, kings, armies, cities, mountains = np.split(board, 5, axis=2)
+        armies, mountains = board[:, :, 2:3], board[:, :, 4:]
         valids = np.zeros(self.getActionSize())
         valids[-1] = 1
 
         indicies = np.argwhere(armies * player > 1)
-        for x, y, _ in indicies:
-            base_index = (y * self.width + x) * 8
+        x, y, _ = indicies.T
+        
+        base_indices = (y * self.width + x) * 8
 
-            if x > 0:
-                valid = mountains[x - 1][y] == 0
-                valids[base_index] = valid
-                valids[base_index + 4] = valid
-            if x < self.width - 1:
-                valid = mountains[x + 1][y] == 0
-                valids[base_index + 1] = valid
-                valids[base_index + 5] = valid
-            if y > 0:
-                valid = mountains[x][y - 1] == 0
-                valids[base_index + 2] = valid
-                valids[base_index + 6] = valid
-            if y < self.height - 1:
-                valid = mountains[x][y + 1] == 0
-                valids[base_index + 3] = valid
-                valids[base_index + 7] = valid
+        # Check mountains
+        valid_x_minus_1 = (x > 0) & (mountains[x - 1, y, 0] == 0)
+        valid_x_plus_1 = (x < self.width - 1) & (mountains[(x + 1) % self.width, y, 0] == 0)
+        valid_y_minus_1 = (y > 0) & (mountains[x, y - 1, 0] == 0)
+        valid_y_plus_1 = (y < self.height - 1) & (mountains[x, (y + 1) % self.height, 0] == 0)
+        
+        # Set valids
+        valids[base_indices] = valid_x_minus_1
+        valids[base_indices + 1] = valid_x_plus_1
+        valids[base_indices + 2] = valid_y_minus_1
+        valids[base_indices + 3] = valid_y_plus_1
+        valids[base_indices + 4] = valid_x_minus_1
+        valids[base_indices + 5] = valid_x_plus_1
+        valids[base_indices + 6] = valid_y_minus_1
+        valids[base_indices + 7] = valid_y_plus_1
 
         return valids
 
     def getGameEnded(self, board, player):
-        metadata, kings, armies, cities, mountains = np.split(board, 5, axis=2)
+        metadata, kings, armies = board[:, :, 0:1], board[:, :, 1:2], board[:, :, 2:3]
+
         if metadata[0][0] > 1000:
             return 0.5
 
-        indices = np.argwhere(kings * armies < 0)
-        if len(indices) > 0:
-            dead = indices[0]
-            return np.sign(armies[dead[0]][dead[1]])
+        if np.any(kings * armies < 0):
+            dead = np.argwhere(kings * armies < 0)[0]
+            return np.sign(armies[dead[0], dead[1], 0])
 
         if np.sum(kings * armies) == 0:
             return 0.5
-        
+
         return 0
 
     def getCanonicalForm(self, board, player):
-        metadata, kings, armies, cities, mountains = np.split(board, 5, axis=2)
-        kings = kings * player
-        armies = armies * player
-        return np.concatenate((metadata, kings, armies, cities, mountains), axis=2)
+        kings_armies = board[:, :, 1:3] * player
+        metadata, cities, mountains = board[:, :, [0]], board[:, :, 3:4], board[:, :, 4:]
+        return np.concatenate((metadata, kings_armies, cities, mountains), axis=2)
 
     def getSymmetries(self, board, pi):
         return [(board, pi)]
@@ -169,9 +173,9 @@ class GeneralsGame(Game):
         metadata, kings, armies, cities, mountains = np.split(board, 5, axis=2)
         print("   ", end="")
         for y in range(len(board)):
-            print(y, end="    ")
+            print(y, end="     ")
         print("")
-        print("----------------------------------")
+        print("----------------------------------------------------")
         for y in range(len(board[0])):
             print(y, "|", end="")
             for x in range(len(board)):
@@ -187,4 +191,4 @@ class GeneralsGame(Game):
                 print(out, end=" ")
             print("|")
 
-        print("----------------------------------")
+        print("----------------------------------------------------")
