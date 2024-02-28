@@ -50,11 +50,8 @@ class GreedyPlayer():
         self.game = game
 
     def play(self, board):
-        valids = self.game.getValidMoves(board, 1)
         candidates = []
-        for a in range(self.game.getActionSize()):
-            if valids[a]==0:
-                continue
+        for a in np.argwhere(self.game.getValidMoves(board, 1) == 1):
             nextBoard, _ = self.game.getNextState(board, 1, a)
             nextBoard, _ = self.game.getNextState(nextBoard, 1, self.game.getActionSize() - 1)
             nextBoard, _ = self.game.getNextState(nextBoard, -1, self.game.getActionSize() - 1)
