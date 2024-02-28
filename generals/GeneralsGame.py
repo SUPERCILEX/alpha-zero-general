@@ -140,15 +140,15 @@ class GeneralsGame(Game):
     def getGameEnded(self, board, player):
         metadata, kings, armies = board[:, :, 0:1], board[:, :, 1:2], board[:, :, 2:3]
 
-        if metadata[0][0] > 1000:
-            return 0.5
+        if metadata[0][0] > 5000:
+            return 1e-6
 
         if np.any(kings * armies < 0):
             dead = np.argwhere(kings * armies < 0)[0]
             return np.sign(armies[dead[0], dead[1], 0])
 
         if np.sum(kings * armies) == 0:
-            return 0.5
+            return 1e-3
 
         return 0
 
