@@ -15,6 +15,15 @@ rp = RandomPlayer(g).play
 gp = GreedyPlayer(g).play
 hp = HumanPlayer(g).play
 
-arena = Arena.Arena(hp, gp, g, display=GeneralsGame.display)
+nn = NNet(g)
+nn.load_checkpoint('./temp/','best.pth.tar')
+args = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
+mcts = MCTS(g, nn, args)
+nnp = lambda x: np.argmax(mcts.getActionProb(x, temp=0))
+
+from torchinfo import summary
+summary(nn.nnet, input_size=(5,3,3))
+
+arena = Arena.Arena(nnp, gp, g, display=GeneralsGame.display)
 
 print(arena.playGames(2, verbose=True))
