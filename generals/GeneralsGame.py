@@ -74,7 +74,7 @@ class GeneralsGame(Game):
         armies = armies.copy()
 
         metadata[0][0] += 1
-        if metadata[0][0] % 50 == 0:
+        if metadata[0][0] % 50 == 0 or metadata[0][0] % 50 - 1 == 0:
             armies[armies * player > 0] += player
         else:
             armies[armies * player * cities > 0] += player
