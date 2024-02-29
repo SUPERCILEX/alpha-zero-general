@@ -149,8 +149,8 @@ class GeneralsGame(Game):
             dead = np.argwhere(lost)[0]
             return np.sign(armies[dead[0], dead[1], 0])
 
-        if np.sum(mine) == 0:
-            return 1e-3
+        if np.sum(mine > 0) != 2:
+            return 0.5 * np.sign(np.sum(np.abs(kings) * armies))
 
         return 0
 
