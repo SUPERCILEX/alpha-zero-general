@@ -35,16 +35,14 @@ def modify_kings(kings):
 
 
 class GeneralsGame(Game):
-    def __init__(self, width=8, height=8, players=2, mountain=1, city=1):
+    def __init__(self, width=3, height=3, players=2):
         self.width = width
         self.height = height
         self.players = players
-        self.mountain = mountain
-        self.city = city
 
     def getInitBoard(self):
-        num_mountains = int(np.ceil((((self.width * self.height) / 4) * self.mountain) / (self.mountain + self.city)))
-        num_cities = int(np.ceil((((self.width * self.height) / 6) * self.city) / (self.mountain + self.city)))
+        num_mountains = 0
+        num_cities = 1
 
         kings = generate_array_with_random_ones(self.width, self.height, self.players)
 
@@ -140,7 +138,7 @@ class GeneralsGame(Game):
     def getGameEnded(self, board, player):
         metadata, kings, armies = board[:, :, 0:1], board[:, :, 1:2], board[:, :, 2:3]
 
-        if metadata[0][0] > 5000:
+        if metadata[0][0] > 1000:
             return 1e-6
 
         mine = kings * armies
