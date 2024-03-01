@@ -160,7 +160,37 @@ class GeneralsGame(Game):
         return np.concatenate((metadata, kings_armies, cities, mountains), axis=2)
 
     def getSymmetries(self, board, pi):
-        return [(board, pi)]
+        sims = []
+
+        pi = np.array(pi)
+        def rotations(board, pi):
+            sims.append((board, pi))
+
+            rotated_board = board
+            rotated_pi = pi[:-1]
+            for _ in range(1, 4):
+                rotated_board = np.rot90(rotated_board)
+                action_matrix = rotated_pi.reshape((rotated_board.shape[0], rotated_board.shape[1], 2, 4))
+                action_matrix = np.rot90(action_matrix, axes=(1, 0))
+                # map left to up, right to down, up to right, down to left
+                action_matrix = action_matrix[:, :, :, [3, 2, 0, 1]]
+                rotated_pi = action_matrix.flatten()
+
+                sims.append((rotated_board, np.append(rotated_pi, pi[-1])))
+
+        rotations(board, pi)
+
+        mirrored_board = np.flipud(board)
+        mirrored_pi = pi[:-1]
+        action_matrix = mirrored_pi.reshape((mirrored_board.shape[0], mirrored_board.shape[1], 2, 4))
+        action_matrix = np.fliplr(action_matrix)
+        # map left to right, right to left
+        action_matrix = action_matrix[:, :, :, [1, 0, 2, 3]]
+        mirrored_pi = action_matrix.flatten()
+
+        rotations(mirrored_board, np.append(mirrored_pi, pi[-1]))
+
+        return sims
 
     def stringRepresentation(self, board):
         return board.tostring()
